@@ -1,0 +1,647 @@
+Native Android APK Upgrade Plan — Jegan Straddle Paper Trading App
+
+Current Problems in Existing App
+
+Your current app is:
+
+Built using Streamlit (desktop/web style)
+
+Not suitable for direct Android APK generation
+
+Uses session state only (data lost after restart)
+
+Depends heavily on Kite API
+
+No local database
+
+No trade analytics
+
+No proper mobile-native UI
+
+No paper trading engine
+
+
+To make this a proper Android APK, the architecture should be redesigned.
+
+
+---
+
+Recommended Tech Stack
+
+Best Option (Recommended)
+
+Frontend
+
+Flutter
+
+Generates native Android APK
+
+Fast UI
+
+Works offline
+
+Lightweight
+
+Excellent charts support
+
+
+Backend Logic (Local)
+
+Dart service layer
+
+No cloud needed initially
+
+
+Local Database
+
+SQLite using sqflite package
+
+
+Market Data
+
+Use:
+
+1. yfinance (free)
+
+
+2. NSE unofficial APIs
+
+
+3. fallback cached data
+
+
+
+Charts
+
+fl_chart package
+
+
+State Management
+
+Riverpod or Provider
+
+
+
+---
+
+Features To Add
+
+1. Paper Trading Engine
+
+Features:
+
+Buy CE/PE
+
+Sell CE/PE
+
+Multi-leg straddle support
+
+PnL tracking
+
+MTM calculation
+
+Virtual capital
+
+Brokerage simulation
+
+Slippage simulation
+
+Risk calculation
+
+
+
+---
+
+2. Local Database Tables
+
+trades
+
+column	type
+
+id	integer
+symbol	text
+strike	integer
+option_type	text
+side	text
+qty	integer
+entry_price	real
+exit_price	real
+pnl	real
+timestamp	text
+status	text
+
+
+
+---
+
+positions
+
+column	type
+
+id	integer
+symbol	text
+qty	integer
+avg_price	real
+current_price	real
+pnl	real
+
+
+
+---
+
+portfolio
+
+column	type
+
+capital	real
+margin_used	real
+realized_pnl	real
+unrealized_pnl	real
+
+
+
+---
+
+New Mobile Screens
+
+Dashboard
+
+Should display:
+
+Total capital
+
+Today PnL
+
+Unrealized PnL
+
+Active positions
+
+Win ratio
+
+Margin used
+
+Strategy health
+
+
+
+---
+
+Trade Screen
+
+Buttons:
+
+Buy CE
+
+Buy PE
+
+Sell CE
+
+Sell PE
+
+Square Off
+
+Auto Hedge
+
+
+
+---
+
+Analytics Screen
+
+Charts:
+
+Equity curve
+
+Daily PnL
+
+Monthly return
+
+Win/Loss pie chart
+
+Drawdown graph
+
+
+
+---
+
+Trade History Screen
+
+Features:
+
+Filter by date
+
+Filter by strategy
+
+Export CSV
+
+Search trades
+
+
+
+---
+
+Better Trading Logic
+
+Current Problem
+
+Your current logic is too static.
+
+It needs:
+
+volatility awareness
+
+IV filter
+
+premium decay logic
+
+market regime detection
+
+stop loss engine
+
+trailing SL
+
+max loss protection
+
+
+
+---
+
+Improved Straddle Logic
+
+Entry Conditions
+
+Take trade ONLY IF:
+
+1. VIX stable
+
+
+2. Opening range confirmed
+
+
+3. Theta favorable
+
+
+4. Premium > threshold
+
+
+5. RR ratio acceptable
+
+
+6. No major event nearby
+
+
+7. Trend neutral
+
+
+
+
+---
+
+Dynamic Strike Selection
+
+Instead of fixed ATM:
+
+Use:
+
+delta based strike selection
+
+premium based strike selection
+
+IV percentile
+
+support/resistance
+
+
+
+---
+
+Suggested Logic
+
+Market Neutral
+
+Sell:
+
+ATM CE
+
+ATM PE
+
+
+Buy hedge:
+
+far OTM CE
+
+far OTM PE
+
+
+
+---
+
+Dynamic SL Logic
+
+Instead of fixed SL:
+
+Use:
+
+SL = Premium × Volatility Factor
+
+Example:
+
+If VIX high:
+
+wider SL
+
+
+If VIX low:
+
+tighter SL
+
+
+
+---
+
+Position Sizing Formula
+
+Use risk-based sizing.
+
+Formula
+
+Risk per trade:
+
+genui{"math_block_widget_always_prefetch_v2":{"content":"\text{Position Size} = \frac{\text{Capital} \times \text{Risk %}}{\text{Stop Loss Amount}}"}}
+
+Example:
+
+Capital = ₹50,000
+
+Risk = 1%
+
+Max risk = ₹500
+
+
+
+---
+
+Daily Loss Protection
+
+If:
+
+Daily loss > 3%
+
+Then:
+
+stop all trades
+
+disable entries
+
+send alert
+
+
+
+---
+
+Suggested Folder Structure
+
+lib/
+ ├── main.dart
+ ├── screens/
+ │    ├── dashboard_screen.dart
+ │    ├── trade_screen.dart
+ │    ├── analytics_screen.dart
+ │    └── history_screen.dart
+ │
+ ├── models/
+ │    ├── trade.dart
+ │    ├── position.dart
+ │    └── portfolio.dart
+ │
+ ├── services/
+ │    ├── market_service.dart
+ │    ├── strategy_service.dart
+ │    ├── db_service.dart
+ │    └── pnl_service.dart
+ │
+ ├── database/
+ │    └── sqlite_helper.dart
+ │
+ └── widgets/
+      ├── pnl_card.dart
+      ├── trade_tile.dart
+      └── chart_widget.dart
+
+
+---
+
+yFinance Integration Example
+
+Python Prototype
+
+import yfinance as yf
+
+nifty = yf.Ticker("^NSEI")
+
+data = nifty.history(period="1d", interval="1m")
+
+print(data.tail())
+
+
+---
+
+NSE Data Alternative
+
+Use:
+
+nsepython
+
+nselib
+
+
+For:
+
+option chain
+
+VIX
+
+expiry data
+
+strikes
+
+PCR
+
+
+
+---
+
+SQLite Trade Insert Example
+
+cursor.execute('''
+INSERT INTO trades(
+    symbol,
+    strike,
+    option_type,
+    side,
+    qty,
+    entry_price,
+    timestamp,
+    status
+)
+VALUES(?,?,?,?,?,?,?,?)
+''', values)
+
+
+---
+
+PnL Formula
+
+Long Option
+
+genui{"math_block_widget_always_prefetch_v2":{"content":"\text{PnL} = (\text{Current Price} - \text{Entry Price}) \times \text{Quantity}"}}
+
+Short Option
+
+genui{"math_block_widget_always_prefetch_v2":{"content":"\text{PnL} = (\text{Entry Price} - \text{Current Price}) \times \text{Quantity}"}}
+
+
+---
+
+APK Generation
+
+Flutter Build Command
+
+flutter build apk --release
+
+Output:
+
+build/app/outputs/flutter-apk/app-release.apk
+
+
+---
+
+Suggested Advanced Features
+
+Phase 2
+
+Add:
+
+AI trade assistant
+
+News sentiment analysis
+
+Auto strike recommendation
+
+Telegram alerts
+
+Voice alerts
+
+Strategy replay mode
+
+Historical simulator
+
+Greeks engine
+
+
+
+---
+
+Important Reality Check
+
+yFinance Limitation
+
+yfinance:
+
+delayed sometimes
+
+unreliable intraday occasionally
+
+not ideal for real money execution
+
+
+Good for:
+
+paper trading
+
+learning
+
+backtesting
+
+
+Not ideal for:
+
+live HFT execution
+
+
+
+---
+
+Best Future Upgrade
+
+When ready:
+
+Move to:
+
+Zerodha Kite
+
+Upstox API
+
+AngelOne SmartAPI
+
+
+
+---
+
+Recommended Next Step
+
+Instead of trying to convert Streamlit directly into APK:
+
+REBUILD it as:
+
+Flutter Native Android App
+
+This gives:
+
+proper APK
+
+offline support
+
+local DB
+
+fast UI
+
+scalable architecture
+
+professional mobile experience
+
+
+
+---
+
+Final Recommendation
+
+Version 1:
+
+Flutter
+
+SQLite
+
+yfinance
+
+paper trading only
+
+
+Version 2:
+
+add broker APIs
+
+real order execution
+
+AI analytics
+
+cloud sync
+
+
+Version 3:
+
+automated trading engine
+
+ML-based strategy adaptation
+
+advanced Greeks analytics
